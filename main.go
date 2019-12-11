@@ -40,7 +40,18 @@ func Route(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	defer apis.Shutdown()
 	sever := http.NewServeMux()
-	sever.HandleFunc("/", apis.GetTrains)
+	sever.HandleFunc("/fromscode", apis.GetPathFromStationCode)
 	log.Fatalln(http.ListenAndServe(":8080", sever))
+	// if api, err := apis.NewTrains(); err != nil {
+	// 	log.Panicln(err.Error())
+	// } else {
+	// 	if p, err := api.GetTrainsFromStationCode("D1"); err != nil {
+	// 		fmt.Println(err.Error())
+	// 	} else {
+	// 		fmt.Println(apis.Trains2AmapPathSimplifier(p))
+	// 	}
+	// }
+
 }
