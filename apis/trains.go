@@ -1,7 +1,8 @@
 package apis
 
 import (
-	"api/rpc"
+	rpc1 "api/rpc"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,7 +16,6 @@ func init() {
 	} else {
 		tains = T
 	}
-
 }
 func Shutdown() {
 	log.Fatalln(tains.Close())
@@ -26,7 +26,23 @@ func GetPathFromStationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if p, err := tains.GetTrainsFromStationCode(r.FormValue("stcode")); err != nil {
+	code := r.FormValue("stcode")
+	if len(code) == 0 {
+		data, _ := json.Marshal(map[string]interface{}{"Code": -1, "Msg": "use stcode."})
+		w.Write(data)
+		return
+	}
+	exists, err := rpc1.TrainsClient.Exits(context.Background(), &rpc1.TrainCode{Code: code})
+	if err != nil {
+		log.Println("some rpc proc has error,", err.Error())
+	} else {
+		if !exists.GetExists() {
+			data, _ := json.Marshal(map[string]interface{}{"Code": -1, "Msg": "Not this train " + code})
+			w.Write(data)
+			return
+		}
+	}
+	if p, err := tains.GetTrainsFromStationCode(code); err != nil {
 		data, _ := json.Marshal(map[string]interface{}{"Code": -1, "Msg": err.Error()})
 		w.Write(data)
 	} else {
