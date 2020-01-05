@@ -16,8 +16,8 @@ type paths struct {
 	Point
 }
 type TrainPath struct {
-	StationCode, TainsCode string
-	Paths                  []paths
+	TainsCode string
+	Paths     []paths
 
 	From, To string
 }
@@ -66,8 +66,12 @@ func (t *Trains) GetTrainsFromTrainCode(m string) (*TrainPath, error) {
 		if len(train.Paths) == 0 {
 			return train, nil
 		}
-		train.StationCode = m
-		train.TainsCode = m
+		var m1 string
+		t.msql.QueryRow("select station_train_code from train.train_info where train_no=?", m).Scan(&m1)
+
+		train.TainsCode = m1
+		train.From = train.Paths[0].StaionName
+		train.To = train.Paths[len(train.Paths)-1].StaionName
 		return train, nil
 	} else {
 		return nil, err
@@ -105,29 +109,36 @@ func (t *Trains) GetTrainsFromStationCode(station_train_code string) (*TrainPath
 		}
 	}
 
-	train.StationCode = station_train_code
 	// train.TainsCode =
 	train.From, train.To = from, to
 	return train, nil
 
 }
-func (t *Trains) GetTrainsFromAddress(from, to string) (*TrainPath, error) {
-
-	var m string
-	row := t.msql.QueryRow("SELECT a.train_no FROM trains AS a INNER JOIN trains AS b ON a.train_no=b.train_no WHERE a.station_no>b.station_no AND a.name=? AND b.name=? ", from, to)
-	log.Println(row.Scan(&m))
-	if m == "" {
-		// data, _ := json.Marshal(map[string]interface{}{"Code": 200, "Data": nil, "Msg": "No Result"})
-		return nil, fmt.Errorf("Resutl is null")
+func (t *Trains) GetTrainsFromAddress(from, to string) ([]*TrainPath, error) {
+	if rows, err := t.msql.Query("SELECT a.train_no FROM trains AS a INNER JOIN trains AS b ON a.train_no=b.train_no WHERE a.station_no<b.station_no AND a.name like ? AND b.name like ? ", from+"%", to+"%"); err != nil {
+		return nil, fmt.Errorf("Resutl is null %v", err)
+	} else {
+		results := make([]*TrainPath, 0)
+		var m string
+		for rows.Next() {
+			if err = rows.Scan(&m); err != nil {
+				log.Println(err.Error())
+				continue
+			}
+			train, _ := t.GetTrainsFromTrainCode(m)
+			results = append(results, train)
+		}
+		return results, nil
 	}
-	train, _ := t.GetTrainsFromTrainCode(m)
-	train.From, train.To = from, to
-	return train, nil
+	// if m == "" {
+	// 	// data, _ := json.Marshal(map[string]interface{}{"Code": 200, "Data": nil, "Msg": "No Result"})
+
+	// }
+
 }
 
 func Trains2AmapPathSimplifier(paths *TrainPath) []byte {
 	data := make(map[string]interface{})
-	data["train_code"] = paths.StationCode
 	m := make([][]float32, len(paths.Paths))
 	var stationInfo []interface{}
 	for i, p := range paths.Paths {

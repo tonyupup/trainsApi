@@ -8,17 +8,17 @@ import (
 	"net/http"
 )
 
-var tains *Trains
+var Tains *Trains
 
 func init() {
 	if T, err := NewTrains(); err != nil {
 		log.Fatal(err)
 	} else {
-		tains = T
+		Tains = T
 	}
 }
 func Shutdown() {
-	log.Fatalln(tains.Close())
+	log.Fatalln(Tains.Close())
 }
 func GetPathFromStationCode(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -42,10 +42,10 @@ func GetPathFromStationCode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if p, err := tains.GetTrainsFromStationCode(code); err != nil {
+	if p, err := Tains.GetTrainsFromStationCode(code); err != nil {
 		data, _ := json.Marshal(map[string]interface{}{"Code": -1, "Msg": err.Error()})
 		w.Write(data)
-	} else {
+	} else {	
 		w.Write(Trains2AmapPathSimplifier(p))
 	}
 
@@ -60,7 +60,7 @@ func GetTrains(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("bad argument"))
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if ep, err := tains.GetTrainsFromAddress(from, to); err != nil {
+	if ep, err := Tains.GetTrainsFromAddress(from, to); err != nil {
 		w.Write([]byte(err.Error()))
 	} else {
 		data, _ := json.Marshal(ep)

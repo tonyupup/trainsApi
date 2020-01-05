@@ -3,9 +3,7 @@ package main
 import (
 	"api/apis"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"regexp"
 )
 
@@ -18,6 +16,7 @@ type routeInfo struct {
 // 路由添加
 var routePath = []routeInfo{
 	routeInfo{`^/trains?from=.*&to=.*$`, apis.GetTrains},
+	routeInfo{`^/fromscode?stcode=.*`, apis.GetPathFromStationCode},
 }
 
 // 使用正则路由转发
@@ -42,15 +41,14 @@ func Route(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	defer apis.Shutdown()
-	sever := http.NewServeMux()
-	sever.HandleFunc("/fromscode", apis.GetPathFromStationCode)
-	sever.HandleFunc("/train", apis.GetTrains)
-	port := os.Getenv("LISTEN_PORT")
-	if port == "" {
-		port = "8080"
-	}
-	log.Println("Start server :", port)
-	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), sever))
+	// sever := http.NewServeMux()
+	// sever.HandleFunc("/", Route）
+	// port := os.Getenv("LISTEN_PORT")
+	// if port == "" {
+	// 	port = "8080"
+	// }
+	// log.Println("Start server :", port)
+	// log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), sever))
 	// if api, err := apis.NewTrains(); err != nil {
 	// 	log.Panicln(err.Error())
 	// } else {
@@ -60,5 +58,10 @@ func main() {
 	// 		fmt.Println(apis.Trains2AmapPathSimplifier(p))
 	// 	}
 	// }
+	if p, err := apis.Tains.GetTrainsFromAddress("大同", "清河"); err != nil {
+		print(err.Error())
+	} else {
+		print(p)
+	}
 
 }
