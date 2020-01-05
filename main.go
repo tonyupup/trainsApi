@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 )
 
@@ -43,7 +44,13 @@ func main() {
 	defer apis.Shutdown()
 	sever := http.NewServeMux()
 	sever.HandleFunc("/fromscode", apis.GetPathFromStationCode)
-	log.Fatalln(http.ListenAndServe(":8080", sever))
+	sever.HandleFunc("/train", apis.GetTrains)
+	port := os.Getenv("LISTEN_PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Println("Start server :", port)
+	log.Fatalln(http.ListenAndServe(fmt.Sprintf(":%s", port), sever))
 	// if api, err := apis.NewTrains(); err != nil {
 	// 	log.Panicln(err.Error())
 	// } else {

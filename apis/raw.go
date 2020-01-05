@@ -46,7 +46,7 @@ func NewTrains() (*Trains, error) {
 }
 func (t *Trains) GetTrainsFromTrainCode(m string) (*TrainPath, error) {
 	train := &TrainPath{}
-	if rowResult, err := t.msql.Query("SELECT *,x(b.lat) as x,y(b.lat) as y FROM trains AS a INNER JOIN station_info AS b ON a.name=b.name WHERE train_no=?", m); err == nil {
+	if rowResult, err := t.msql.Query("SELECT a.*,x(b.lat) as x,y(b.lat) as y FROM trains AS a INNER JOIN station_info AS b ON a.name=b.name WHERE train_no=?", m); err == nil {
 		defer rowResult.Close()
 		var s struct {
 			id, DAY_DIFF                                                      int

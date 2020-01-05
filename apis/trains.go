@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"api/rpc"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -42,8 +43,8 @@ func GetTrains(w http.ResponseWriter, r *http.Request) {
 	if from == "" || to == "" {
 		w.Write([]byte("bad argument"))
 	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if ep, err := tains.GetTrainsFromAddress(from, to); err != nil {
-
 		w.Write([]byte(err.Error()))
 	} else {
 		data, _ := json.Marshal(ep)
