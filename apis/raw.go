@@ -2,7 +2,6 @@ package apis
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -118,6 +117,7 @@ func (t *Trains) GetTrainsFromAddress(from, to string) ([]*TrainPath, error) {
 	if rows, err := t.msql.Query("SELECT a.train_no FROM trains AS a INNER JOIN trains AS b ON a.train_no=b.train_no WHERE a.station_no<b.station_no AND a.name like ? AND b.name like ? ", from+"%", to+"%"); err != nil {
 		return nil, fmt.Errorf("Resutl is null %v", err)
 	} else {
+		defer rows.Close()
 		results := make([]*TrainPath, 0)
 		var m string
 		for rows.Next() {
@@ -137,17 +137,22 @@ func (t *Trains) GetTrainsFromAddress(from, to string) ([]*TrainPath, error) {
 
 }
 
-func Trains2AmapPathSimplifier(paths *TrainPath) []byte {
-	data := make(map[string]interface{})
-	m := make([][]float32, len(paths.Paths))
-	var stationInfo []interface{}
-	for i, p := range paths.Paths {
-		m[i] = []float32{p.X, p.Y}
-		stationInfo = append(stationInfo, map[string]interface{}{"StationName": p.StaionName, "AT": p.ArrivedT, "ST": p.StartT, "RT": p.RunT, "DayDiff": p.dayDiff})
-	}
-	data["paths"] = m
-	data["stationInnfo"] = stationInfo
-	nd, _ := json.Marshal(data)
-	return nd
+//AmapPaths apis for amap
+type AmapPaths struct {
+	Paths       [][]float32              `json:"paths"`
+	StationInfo []map[string]interface{} `json:"stationInfo"`
+	Size        int                      `json:"size"`
+	TrainCode   string                   `json:"trainCode"`
+}
 
+func Trains2AmapPathSimplifier(paths *TrainPath) (data AmapPaths) {
+	data.Paths = make([][]float32, len(paths.Paths))
+	data.StationInfo = make([]map[string]interface{}, len(paths.Paths))
+	data.Size = len(paths.Paths)
+	data.TrainCode = paths.TainsCode
+	for i, p := range paths.Paths {
+		data.Paths[i] = []float32{p.X, p.Y}
+		data.StationInfo[i] = map[string]interface{}{"StationName": p.StaionName, "AT": p.ArrivedT, "ST": p.StartT, "RT": p.RunT, "DayDiff": p.dayDiff}
+	}
+	return
 }

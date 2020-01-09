@@ -45,8 +45,9 @@ func GetPathFromStationCode(w http.ResponseWriter, r *http.Request) {
 	if p, err := Tains.GetTrainsFromStationCode(code); err != nil {
 		data, _ := json.Marshal(map[string]interface{}{"Code": -1, "Msg": err.Error()})
 		w.Write(data)
-	} else {	
-		w.Write(Trains2AmapPathSimplifier(p))
+	} else {
+		data, _ := json.Marshal(Trains2AmapPathSimplifier(p))
+		w.Write(data)
 	}
 
 }
@@ -58,12 +59,22 @@ func GetTrains(w http.ResponseWriter, r *http.Request) {
 	from, to := r.FormValue("from"), r.FormValue("to")
 	if from == "" || to == "" {
 		w.Write([]byte("bad argument"))
+		return
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if ep, err := Tains.GetTrainsFromAddress(from, to); err != nil {
 		w.Write([]byte(err.Error()))
 	} else {
-		data, _ := json.Marshal(ep)
-		w.Write(data)
+		data := make(map[string]interface{})
+		data["from"] = from
+		data["to"] = to
+		data["size"] = len(ep)
+		Paths := make([]AmapPaths, len(ep))
+		for i, item := range ep {
+			Paths[i] = Trains2AmapPathSimplifier(item)
+		}
+		data["paths"] = Paths
+		datas, _ := json.Marshal(data)
+		w.Write(datas)
 	}
 }
